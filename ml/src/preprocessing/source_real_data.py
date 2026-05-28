@@ -61,9 +61,11 @@ def generate_real_grounded_data(n_samples=5000):
     return pd.DataFrame(data, columns=columns)
 
 if __name__ == "__main__":
+    import os
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     df = generate_real_grounded_data(8000)
-    save_path = "ml/data/real_world_yield_data.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    save_path = os.path.join(BASE_DIR, '..', 'data', 'real_world_yield_data.csv')
+    os.makedirs(os.path.join(BASE_DIR, '..', 'data'), exist_ok=True)
     df.to_csv(save_path, index=False)
     print(f"✅ Created {len(df)} 100% real-world grounded records at {save_path}")
     print(f"Rice Mean Yield: {df[df['crop']=='Rice']['yield'].mean():.2f} T/Ha (Matches ICAR standard)")

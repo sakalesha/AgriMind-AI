@@ -56,6 +56,10 @@ def get_irrigation_level(rainfall, humidity):
     elif humidity > 70: return 'Low'
     else: return 'Medium'
 
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({'status': 'ok'}), 200
+
 @app.route('/api/predict', methods=['POST'])
 def predict():
     try:

@@ -32,11 +32,7 @@ const createSendToken = (user, statusCode, res) => {
 
 exports.register = async (req, res) => {
     try {
-        const newUser = await User.create({
-            fullName: req.body.fullName,
-            email: req.body.email,
-            password: req.body.password
-        });
+        const newUser = await User.create(req.body);
 
         createSendToken(newUser, 201, res);
     } catch (error) {
@@ -51,15 +47,7 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // 1) Check if email and password exist
-        if (!email || !password) {
-            return res.status(400).json({
-                status: 'fail',
-                message: 'Please provide email and password'
-            });
-        }
-
-        // 2) Check if user exists && password is correct
+        // Validation is handled by middleware — controller assumes validated input
         const user = await User.findOne({ email }).select('+password');
 
         if (!user || !(await user.comparePassword(password, user.password))) {
@@ -94,4 +82,36 @@ exports.getMe = (req, res) => {
             user: req.user
         }
     });
+};
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const allowedUpdates = [
+            'fullName', 'phone', 'farmName', 'farmLocation', 
+            'farmSize', 'primaryCrop', 'preferences', 
+            'inventory', 'tasks', 'diseaseHistory'
+        ];
+        
+        const updates = {};
+        allowedUpdates.forEach(key => {
+            if (req.body[key] !== undefined) {
+                updates[key] = req.body[key];
+            }
+        });
+        
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+        
+        res.status(200).json({
+            status: 'success',
+            data: {
+                user: updatedUser
+            }
+        });
+    } catch (error) {
+        res.status(400).json({ status: 'fail', message: error.message });
+    }
 };

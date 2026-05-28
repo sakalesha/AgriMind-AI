@@ -21,6 +21,80 @@ const userSchema = new mongoose.Schema({
         minlength: 6,
         select: false // Don't return password by default
     },
+    phone: {
+        type: String,
+        default: '+91 98765 43210'
+    },
+    farmName: {
+        type: String,
+        default: 'Green Valley Farms'
+    },
+    farmLocation: {
+        type: String,
+        default: 'Punjab, India'
+    },
+    farmSize: {
+        type: Number,
+        default: 15.5
+    },
+    primaryCrop: {
+        type: String,
+        default: 'Rice'
+    },
+    preferences: {
+        notifications: {
+            type: Boolean,
+            default: true
+        },
+        theme: {
+            type: String,
+            default: 'dark'
+        },
+        currency: {
+            type: String,
+            default: 'INR'
+        },
+        language: {
+            type: String,
+            default: 'en'
+        }
+    },
+    inventory: {
+        type: [{
+            name: String,
+            category: String,
+            quantity: Number,
+            unit: String,
+            minThreshold: Number
+        }],
+        default: [
+            { name: 'Basmati Seeds', category: 'Seeds', quantity: 50, unit: 'kg', minThreshold: 10 },
+            { name: 'Urea Fertilizer', category: 'Fertilizers', quantity: 5, unit: 'bags', minThreshold: 10 },
+            { name: 'Neem Oil', category: 'Pesticides', quantity: 12, unit: 'liters', minThreshold: 5 }
+        ]
+    },
+    tasks: {
+        type: [{
+            title: String,
+            date: String,
+            category: String,
+            priority: String,
+            completed: { type: Boolean, default: false }
+        }],
+        default: [
+            { title: 'Morning Irrigation', date: new Date().toISOString().split('T')[0], category: 'Irrigation', priority: 'high', completed: false },
+            { title: 'Check for Rice Blast', date: new Date().toISOString().split('T')[0], category: 'Disease Control', priority: 'medium', completed: true }
+        ]
+    },
+    diseaseHistory: {
+        type: [{
+            diseaseName: String,
+            date: String,
+            severity: String,
+            crop: String
+        }],
+        default: []
+    },
     createdAt: {
         type: Date,
         default: Date.now

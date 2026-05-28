@@ -5,10 +5,10 @@ import numpy as np
 from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
 
 # --- Paths ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, 'models', 'yield_model.pkl')
-ENCODER_PATH = os.path.join(BASE_DIR, 'models', 'yield_label_encoder.pkl')
-DATA_PATH = os.path.join(BASE_DIR, 'data', 'real_world_validation.csv')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, '..', 'models', 'yield_model.pkl')
+ENCODER_PATH = os.path.join(BASE_DIR, '..', 'models', 'yield_label_encoder.pkl')
+DATA_PATH = os.path.join(BASE_DIR, '..', 'data', 'real_world_validation.csv')
 
 def run_validation():
     print("🚀 Starting Yield Model Stress Test...")
@@ -66,7 +66,7 @@ def run_validation():
     print("="*30)
     
     # Generate a Markdown report
-    report_path = os.path.join(BASE_DIR, '..', 'docs', 'validation_report.md')
+    report_path = os.path.join(BASE_DIR, '..', '..', 'docs', 'validation_report.md')
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     
     with open(report_path, 'w', encoding='utf-8') as f:

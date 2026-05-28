@@ -38,9 +38,9 @@ def train_model():
     print(f"✅ Training Complete. Test R² Score: {score:.4f}")
 
     # 4. Export
-    os.makedirs('ml/models', exist_ok=True)
-    joblib.dump(model, 'ml/models/yield_model.pkl')
-    joblib.dump(le, 'ml/models/yield_label_encoder.pkl')
+    os.makedirs(os.path.join(BASE_DIR, 'models'), exist_ok=True)
+    joblib.dump(model, os.path.join(BASE_DIR, 'models', 'yield_model.pkl'))
+    joblib.dump(le, os.path.join(BASE_DIR, 'models', 'yield_label_encoder.pkl'))
     print("✅ Exported: yield_model.pkl, yield_label_encoder.pkl")
 
 if __name__ == "__main__":

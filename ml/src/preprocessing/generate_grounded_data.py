@@ -61,9 +61,11 @@ def generate_data(n_samples=10000):
     return pd.DataFrame(data, columns=columns)
 
 if __name__ == "__main__":
+    import os
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     df = generate_data(12000)
-    save_path = "ml/data/grounded_yield_data.csv"
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    save_path = os.path.join(BASE_DIR, '..', 'data', 'grounded_yield_data.csv')
+    os.makedirs(os.path.join(BASE_DIR, '..', 'data'), exist_ok=True)
     df.to_csv(save_path, index=False)
     print(f"✅ Generated {len(df)} rows of grounded-synthetic data at {save_path}")
     print(f"Mean Yield: {df['yield'].mean():.2f} T/Ha")

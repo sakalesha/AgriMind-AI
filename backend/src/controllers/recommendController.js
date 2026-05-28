@@ -3,18 +3,59 @@ const Recommendation = require('../models/Recommendation');
 const cropRequirements = require('../data/cropRequirements');
 const marketPrices = require('../data/marketPrices');
 const { LRUCache } = require('lru-cache');
+const CircuitBreaker = require('opossum');
 
 const mlCache = new LRUCache({
     max: 200,
     ttl: 1000 * 60 * 60 * 24 // 24 hours
 });
 
+const ML_SERVICE_PORT = process.env.ML_SERVICE_PORT || 5001;
+const ML_BASE_URL = `http://127.0.0.1:${ML_SERVICE_PORT}`;
+
+async function callMlService(url, payload, timeoutMs = 8000) {
+    const response = await axios.post(url, payload, { timeout: timeoutMs });
+    return response.data;
+}
+
+const mlBreaker = new CircuitBreaker(callMlService, {
+    timeout: 8000,
+    errorThresholdPercentage: 50,
+    resetTimeout: 30000,
+    volumeThreshold: 3
+});
+
+mlBreaker.on('fallback', (result) => console.warn('⚡ Circuit breaker fallback triggered'));
+mlBreaker.on('reject', (err) => console.warn('⚡ Circuit breaker rejected:', err.message));
+mlBreaker.on('timeout', () => console.warn('⚡ ML service call timed out'));
+
+let cachedExchangeRate = null;
+let exchangeRateCachedAt = 0;
+const EXCHANGE_RATE_TTL = 60 * 60 * 1000; // 1 hour
+
+async function getExchangeRate() {
+    const now = Date.now();
+    if (cachedExchangeRate && (now - exchangeRateCachedAt) < EXCHANGE_RATE_TTL) {
+        return cachedExchangeRate;
+    }
+    try {
+        const res = await axios.get('https://api.frankfurter.app/latest?from=USD&to=INR', { timeout: 4000 });
+        if (res.data?.rates?.INR) {
+            cachedExchangeRate = res.data.rates.INR;
+            exchangeRateCachedAt = now;
+            return cachedExchangeRate;
+        }
+    } catch (ex) {
+        console.warn('⚠️ Exchange rate fetch failed, using fallback:', cachedExchangeRate || 83.5);
+    }
+    return cachedExchangeRate || 83.5;
+}
+
 exports.getRecommendation = async (req, res) => {
     try {
         const { fieldName, N, P, K, temperature, humidity, ph, rainfall } = req.body;
-        const ML_SERVICE_PORT = process.env.ML_SERVICE_PORT || 5001;
         const cacheKey = `${N}|${P}|${K}|${temperature}|${humidity}|${ph}|${rainfall}`;
-        
+
         let crop, irrigation;
         let estimatedYield = 2.0;
         let yieldInterval = null;
@@ -27,31 +68,33 @@ exports.getRecommendation = async (req, res) => {
             estimatedYield = cachedData.estimatedYield;
             yieldInterval = cachedData.yieldInterval;
         } else {
-            // Internal call to Python service running on port 5001
-            const ML_URL = `http://127.0.0.1:${ML_SERVICE_PORT}/api/predict`;
+            const payload = { N, P, K, temperature, humidity, ph, rainfall };
 
-            const mlResponse = await axios.post(ML_URL, {
-                N, P, K, temperature, humidity, ph, rainfall
-            });
-
-            crop = mlResponse.data.crop;
-            irrigation = mlResponse.data.irrigation;
-
-            // Fetch ML Yield Prediction
-            const YIELD_URL = `http://127.0.0.1:${ML_SERVICE_PORT}/api/predict_yield`;
+            let mlResult;
             try {
-                const yieldResponse = await axios.post(YIELD_URL, {
-                    crop, N, P, K, temperature, humidity, ph, rainfall
+                mlResult = await mlBreaker.fire(`${ML_BASE_URL}/api/predict`, payload);
+                crop = mlResult.crop;
+                irrigation = mlResult.irrigation;
+            } catch (breakerError) {
+                console.error('❌ ML service (crop prediction) unavailable:', breakerError.message);
+                return res.status(503).json({
+                    status: 'fail',
+                    message: 'Prediction service temporarily unavailable. Please try again later.',
+                    code: 'ML_SERVICE_UNAVAILABLE'
                 });
-                if (yieldResponse.data && yieldResponse.data.yield) {
-                    estimatedYield = yieldResponse.data.yield;
-                    yieldInterval = yieldResponse.data.interval || null;
-                }
-            } catch (yieldError) {
-                console.error('⚠️ Yield Prediction Error (falling back to default):', yieldError.message);
             }
 
-            // Save to cache
+            // Fetch yield prediction (non-blocking fallback)
+            try {
+                const yieldResult = await mlBreaker.fire(`${ML_BASE_URL}/api/predict_yield`, { crop, ...payload });
+                if (yieldResult?.yield) {
+                    estimatedYield = yieldResult.yield;
+                    yieldInterval = yieldResult.interval || null;
+                }
+            } catch (yieldError) {
+                console.warn('⚠️ Yield prediction failed (falling back to default):', yieldError.message);
+            }
+
             mlCache.set(cacheKey, { crop, irrigation, estimatedYield, yieldInterval });
         }
 
@@ -79,35 +122,25 @@ exports.getRecommendation = async (req, res) => {
             fertilizerAdvice = { summary: ["General NPK balanced fertilizer recommended."] };
         }
 
-        // 3. Market Analysis & LSTM Profitability Forecast
-        const PRICE_URL = `http://127.0.0.1:${ML_SERVICE_PORT}/api/predict_price_trend`;
+        // 2. Market Analysis & LSTM Profitability Forecast
         let pricePerTon = marketPrices[crop.toLowerCase()] || 500;
         let predictedPrice = pricePerTon;
         let marketTrend = "Stable";
-        let usdToInr = 83.5;
+        const usdToInr = await getExchangeRate();
 
         try {
-            const res = await axios.get('https://api.frankfurter.app/latest?from=USD&to=INR', { timeout: 4000 });
-            if (res.data?.rates?.INR) usdToInr = res.data.rates.INR;
-        } catch (ex) {
-            console.warn('⚠️ Exchange rate fetch failed, using fallback:', usdToInr);
-        }
-
-        try {
-            const priceResponse = await axios.post(PRICE_URL, { crop });
-            if (priceResponse.data && priceResponse.data.status === 'success') {
-                pricePerTon = priceResponse.data.current_price;
-                predictedPrice = priceResponse.data.predicted_price;
-                marketTrend = priceResponse.data.trend;
+            const priceResult = await mlBreaker.fire(`${ML_BASE_URL}/api/predict_price_trend`, { crop });
+            if (priceResult && priceResult.status === 'success') {
+                pricePerTon = priceResult.current_price;
+                predictedPrice = priceResult.predicted_price;
+                marketTrend = priceResult.trend;
             }
         } catch (priceError) {
-            console.error('⚠️ Price Prediction Error (falling back to static):', priceError.message);
-            // Fallback trend simulation
+            console.warn('⚠️ Price prediction failed (using static fallback):', priceError.message);
             const trendValue = (Math.random() * 20) - 5;
             marketTrend = trendValue > 2 ? 'Up' : trendValue < -2 ? 'Down' : 'Stable';
         }
 
-        // Apply currency conversion (USD to INR)
         pricePerTon = Math.round(pricePerTon * usdToInr);
         predictedPrice = Math.round(predictedPrice * usdToInr);
         const estimatedRevenue = estimatedYield * predictedPrice;
@@ -119,7 +152,7 @@ exports.getRecommendation = async (req, res) => {
             prediction: {
                 crop,
                 irrigation,
-                yield: estimatedYield.toFixed(2), // Storing yield in the record
+                yield: estimatedYield.toFixed(2),
                 yieldInterval,
                 marketPrice: pricePerTon,
                 estimatedRevenue: Math.round(estimatedRevenue),

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Leaf, 
-  Mail, 
-  Lock, 
-  User, 
-  ArrowRight, 
-  Github, 
+import {
+  Leaf,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  Github,
   Chrome,
   CheckCircle2,
   AlertCircle
@@ -29,16 +29,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
     const form = e.target as HTMLFormElement;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const password = (form.elements.namedItem('password') as HTMLInputElement).value;
-    
+
     let name = '';
     if (!isLogin) {
       name = (form.elements.namedItem('name') as HTMLInputElement).value;
     }
 
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-    const payload = isLogin 
-      ? { email, password } 
-      : { name, email, password };
+    const payload = isLogin
+      ? { email, password }
+      : { fullName: name, email, password };
 
     try {
       const res = await fetch(endpoint, {
@@ -49,12 +49,37 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      
+
       setIsLoading(false);
       if (data.status === 'success') {
         onLogin();
       } else {
         setError(data.message || 'Authentication failed');
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setError('Network error. Please check if the backend is running.');
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: 'demo@agrimind.ai', password: 'password123' })
+      });
+      const data = await res.json();
+      
+      setIsLoading(false);
+      if (data.status === 'success') {
+        onLogin();
+      } else {
+        setError(data.message || 'Demo authentication failed');
       }
     } catch (err) {
       setIsLoading(false);
@@ -70,13 +95,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-10">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             className="w-20 h-20 bg-agro-neon/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-agro-neon/20 shadow-lg shadow-agro-neon/5"
@@ -85,21 +110,31 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
           </motion.div>
           <h1 className="text-4xl font-display font-bold text-white tracking-tight mb-2">AgriMind AI</h1>
           <p className="text-zinc-400 text-lg">Your Personal AI Agricultural Advisor</p>
-          <div className="mt-4 p-4 bg-agro-neon/5 border border-agro-neon/10 rounded-2xl">
-            <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Demo Credentials</p>
-            <p className="text-sm text-agro-neon font-mono">admin@agrimind.ai / password123</p>
-          </div>
+          <button 
+            type="button"
+            onClick={handleDemoLogin}
+            disabled={isLoading}
+            className="w-full mt-4 p-4 bg-agro-neon/5 hover:bg-agro-neon/10 border border-agro-neon/10 hover:border-agro-neon/30 rounded-2xl text-left transition-all cursor-pointer group flex flex-col justify-start items-start gap-1"
+          >
+            <div className="flex justify-between items-center w-full">
+              <p className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Demo Account</p>
+              <span className="text-agro-neon text-[10px] font-bold uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+                Login as Demo User &rarr;
+              </span>
+            </div>
+            <p className="text-sm text-agro-neon font-mono">demo@agrimind.ai / password123</p>
+          </button>
         </div>
 
         <div className="premium-card p-8 bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl">
           <div className="flex p-1 bg-white/5 rounded-2xl mb-8 border border-white/5">
-            <button 
+            <button
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${isLogin ? 'bg-agro-neon text-agro-dark shadow-lg shadow-agro-neon/20' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
               Sign In
             </button>
-            <button 
+            <button
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all duration-300 ${!isLogin ? 'bg-agro-neon text-agro-dark shadow-lg shadow-agro-neon/20' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
@@ -119,8 +154,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                   <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Full Name</label>
                   <div className="relative group">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-agro-neon transition-colors" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       name="name"
                       required
                       placeholder="John Doe"
@@ -135,8 +170,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-agro-neon transition-colors" />
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   name="email"
                   required
                   placeholder="farmer@agrimind.ai"
@@ -154,8 +189,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
               </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-agro-neon transition-colors" />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   name="password"
                   required
                   placeholder="••••••••"
@@ -171,8 +206,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
               </div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               className="w-full bg-agro-neon text-agro-dark font-bold py-4 rounded-2xl hover:bg-agro-neon/90 transition-all flex items-center justify-center gap-3 shadow-lg shadow-agro-neon/20 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
@@ -185,6 +220,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 </>
               )}
             </button>
+
+            {isLogin && (
+              <button 
+                type="button" 
+                onClick={handleDemoLogin}
+                disabled={isLoading}
+                className="w-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-agro-neon/30 text-agro-neon font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer"
+              >
+                Login as Demo User
+              </button>
+            )}
           </form>
 
           <div className="mt-8">

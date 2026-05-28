@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Bell, 
-  Search, 
-  User, 
-  ChevronRight, 
+import {
+  Bell,
+  Search,
+  User,
+  ChevronRight,
   Calendar,
   Sparkles,
   ArrowUpRight,
@@ -16,32 +16,30 @@ import {
   HelpCircle,
   Zap,
   BarChart3,
-  Satellite,
   Sun,
   Moon,
   CloudSun,
   AlertCircle
 } from 'lucide-react';
-import { Sidebar } from './components/Sidebar';
+import { Sidebar } from './layouts/Sidebar';
 import { WeatherWidget } from './components/WeatherWidget';
 import { SoilInputForm } from './components/SoilInputForm';
 import { RecommendationCard } from './components/RecommendationCard';
-import { MarketInsights } from './components/MarketInsights';
-import { CommunityFeed } from './components/CommunityFeed';
-import { AuthPage } from './components/AuthPage';
-import { FinancialLedger } from './components/FinancialLedger';
-import { DiseaseDetection } from './components/DiseaseDetection';
-import { UserProfile } from './components/UserProfile';
-import { NotificationCenter } from './components/NotificationCenter';
-import { AgriCalendar } from './components/AgriCalendar';
-import { InventoryManager } from './components/InventoryManager';
-import { MachineryMarketplace } from './components/MachineryMarketplace';
-import { SatelliteMonitoring } from './components/SatelliteMonitoring';
-import { AgriConsultant } from './components/AgriConsultant';
-import { IrrigationScheduler } from './components/IrrigationScheduler';
-import { YieldSimulator } from './components/YieldSimulator';
+import { MarketInsights } from './pages/MarketInsights';
+import { CommunityFeed } from './pages/CommunityFeed';
+import { AuthPage } from './pages/AuthPage';
+import { FinancialLedger } from './pages/FinancialLedger';
+import { DiseaseDetection } from './pages/DiseaseDetection';
+import { UserProfile } from './pages/UserProfile';
+import { NotificationCenter } from './pages/NotificationCenter';
+import { AgriCalendar } from './pages/AgriCalendar';
+import { InventoryManager } from './pages/InventoryManager';
+import { MachineryMarketplace } from './pages/MachineryMarketplace';
+import { AgriConsultant } from './pages/AgriConsultant';
+import { IrrigationScheduler } from './pages/IrrigationScheduler';
+import { YieldSimulator } from './pages/YieldSimulator';
 import { useTranslation } from 'react-i18next';
-import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
 import { exportToPDF } from './lib/pdfExport';
 import { requestNotificationPermission, sendNotification } from './lib/notifications';
 import { SoilMetrics, Recommendation, UserProfile as UserProfileType, Notification, DiseaseRecord, FarmTask, InventoryItem, MachineryItem, AnalyticsData } from './types';
@@ -52,7 +50,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const [profile, setProfile] = useState<UserProfileType>({
     name: 'Rona Dasakalesha',
     email: 'ronadasakalesha@gmail.com',
@@ -108,6 +106,34 @@ export default function App() {
     i18n.changeLanguage(profile.preferences.language);
   }, [profile.preferences.language, i18n]);
 
+  // Fetch active user profile from database on login/mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/auth/me', { credentials: 'include' })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === 'success' && result.data?.user) {
+            const u = result.data.user;
+            setProfile(prev => ({
+              ...prev,
+              name: u.fullName || prev.name,
+              email: u.email || prev.email,
+              phone: u.phone || prev.phone,
+              farmName: u.farmName || prev.farmName,
+              farmLocation: u.farmLocation || prev.farmLocation,
+              farmSize: u.farmSize !== undefined ? u.farmSize : prev.farmSize,
+              primaryCrop: u.primaryCrop || prev.primaryCrop,
+              preferences: u.preferences || prev.preferences,
+              inventory: u.inventory?.length > 0 ? u.inventory : prev.inventory,
+              tasks: u.tasks?.length > 0 ? u.tasks : prev.tasks,
+              diseaseHistory: u.diseaseHistory || prev.diseaseHistory || []
+            }));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetch('/api/history', { credentials: 'include' })
@@ -122,7 +148,7 @@ export default function App() {
               .filter(y => y.yield > 0)
               .reverse()
               .slice(-5); // last 5 records
-              
+
             if (historicalYield.length > 0) {
               setProfile(prev => ({
                 ...prev,
@@ -138,11 +164,98 @@ export default function App() {
     }
   }, [isAuthenticated]);
 
-  const [machinery, setMachinery] = useState<MachineryItem[]>([
-    { id: '1', name: 'John Deere 5310', owner: 'Harpreet Singh', pricePerDay: 2500, location: 'Amritsar, Punjab', available: true, image: 'https://picsum.photos/seed/tractor1/800/600' },
-    { id: '2', name: 'Mahindra Arjun 555', owner: 'Rajesh Kumar', pricePerDay: 2200, location: 'Ludhiana, Punjab', available: false, image: 'https://picsum.photos/seed/tractor2/800/600' },
-    { id: '3', name: 'Sonalika Worldtrac', owner: 'Gurmeet Singh', pricePerDay: 2800, location: 'Jalandhar, Punjab', available: true, image: 'https://picsum.photos/seed/tractor3/800/600' }
-  ]);
+  const [machinery, setMachinery] = useState<MachineryItem[]>([]);
+
+  // Fetch machinery from dynamic marketplace API
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/machinery', { credentials: 'include' })
+        .then(res => res.json())
+        .then(result => {
+          if (result.status === 'success' && Array.isArray(result.data)) {
+            setMachinery(result.data.map((m: any) => ({
+              id: m._id,
+              name: m.name,
+              owner: m.owner,
+              pricePerDay: m.pricePerDay,
+              location: m.location,
+              available: m.available,
+              image: m.image
+            })));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isAuthenticated]);
+
+  const saveProfileToDb = async (updatedProfile: UserProfileType) => {
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          fullName: updatedProfile.name,
+          phone: updatedProfile.phone,
+          farmName: updatedProfile.farmName,
+          farmLocation: updatedProfile.farmLocation,
+          farmSize: updatedProfile.farmSize,
+          primaryCrop: updatedProfile.primaryCrop,
+          preferences: updatedProfile.preferences,
+          inventory: updatedProfile.inventory,
+          tasks: updatedProfile.tasks,
+          diseaseHistory: updatedProfile.diseaseHistory
+        })
+      });
+      const data = await res.json();
+      if (data.status !== 'success') {
+        console.error('Failed to sync profile to database:', data.message);
+      }
+    } catch (err) {
+      console.error('Error saving profile to database:', err);
+    }
+  };
+
+  const handleRentMachinery = async (id: string) => {
+    try {
+      const res = await fetch(`/api/machinery/${id}/rent`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const result = await res.json();
+      if (result.status === 'success') {
+        setMachinery(prev => prev.map(m => m.id === id ? { ...m, available: false } : m));
+      }
+    } catch (err) {
+      console.error("Failed to rent machinery:", err);
+    }
+  };
+
+  const handleListMachinery = async (item: Omit<MachineryItem, 'id' | 'available'>) => {
+    try {
+      const res = await fetch('/api/machinery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(item)
+      });
+      const result = await res.json();
+      if (result.status === 'success' && result.data) {
+        const newMachineryItem = {
+          id: result.data._id,
+          name: result.data.name,
+          owner: result.data.owner,
+          pricePerDay: result.data.pricePerDay,
+          location: result.data.location,
+          available: result.data.available,
+          image: result.data.image
+        };
+        setMachinery(prev => [newMachineryItem, ...prev]);
+      }
+    } catch (err) {
+      console.error("Failed to list machinery:", err);
+    }
+  };
 
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -199,7 +312,7 @@ export default function App() {
   const handleSoilSubmit = async (metrics: SoilMetrics) => {
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/recommendations', {
+      const response = await fetch('/api/recommend', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -217,7 +330,7 @@ export default function App() {
         })
       });
       const data = await response.json();
-      
+
       if (data.status === 'success') {
         setRecommendation({
           id: data.recordId || Math.random().toString(36).substr(2, 9),
@@ -248,13 +361,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-agro-dark text-white flex agro-gradient overflow-x-hidden">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onSignOut={() => setIsAuthenticated(false)} 
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onSignOut={() => setIsAuthenticated(false)}
         unreadNotifications={unreadCount}
       />
-      
+
       <main className="flex-1 lg:ml-72 p-4 md:p-8 lg:p-10 pt-24 lg:pt-10">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
@@ -272,7 +385,6 @@ export default function App() {
               {activeTab === 'analytics' && 'Analytics'}
               {activeTab === 'market' && 'Market Intelligence'}
               {activeTab === 'finance' && 'Financial Ledger'}
-              {activeTab === 'satellite' && 'Satellite Health'}
               {activeTab === 'community' && 'Farmer Community'}
               {activeTab === 'notifications' && 'Notifications'}
               {activeTab === 'profile' && 'User Profile'}
@@ -281,14 +393,14 @@ export default function App() {
 
           <div className="flex items-center gap-4 md:gap-6 w-full md:w-auto justify-between md:justify-end">
             <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-[var(--border-color)] rounded-2xl">
-              <button 
+              <button
                 onClick={() => setProfile(prev => ({ ...prev, preferences: { ...prev.preferences, theme: prev.preferences.theme === 'dark' ? 'light' : 'dark' } }))}
                 className="p-1 hover:text-agro-neon transition-colors"
               >
                 {profile.preferences.theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
               <div className="w-px h-4 bg-white/10 mx-1" />
-              <button 
+              <button
                 onClick={() => setActiveTab('notifications')}
                 className="relative p-1 hover:text-agro-neon transition-colors"
               >
@@ -297,22 +409,22 @@ export default function App() {
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
                 )}
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('profile')}
                 className="p-1 hover:text-agro-neon transition-colors"
               >
                 <Settings className="w-5 h-5" />
               </button>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => setActiveTab('profile')}
               className="flex items-center gap-3 pl-4 md:pl-6 border-l border-[var(--border-color)]"
             >
               <div className="w-10 h-10 rounded-2xl overflow-hidden border border-white/20">
-                <img 
-                  src="https://picsum.photos/seed/farmer/100/100" 
-                  alt="Profile" 
+                <img
+                  src="https://picsum.photos/seed/farmer/100/100"
+                  alt="Profile"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -372,7 +484,9 @@ export default function App() {
                             <AlertCircle className="w-6 h-6 text-red-500" />
                           </div>
                           <p className="text-xs text-[var(--text-muted)] mb-1">Alerts</p>
-                          <p className="text-sm font-bold text-red-500">#FF6B6B</p>
+                          <p className={`text-sm font-bold ${unreadCount > 0 ? 'text-red-500' : 'text-zinc-400'}`}>
+                            {unreadCount > 0 ? `${unreadCount} Active` : 'None'}
+                          </p>
                         </div>
                         <div className="premium-card flex flex-col items-center justify-center text-center">
                           <p className="text-xs text-[var(--text-muted)] mb-2">Confidence Meter</p>
@@ -402,16 +516,6 @@ export default function App() {
                     </section>
                   </div>
                 </div>
-
-                {/* Status Bar */}
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 px-6 py-4 bg-white/5 border border-[var(--border-color)] rounded-3xl md:rounded-full">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-agro-neon animate-pulse" />
-                    <span className="text-sm font-bold text-[var(--text-main)] whitespace-nowrap">Status bar</span>
-                  </div>
-                  <div className="hidden md:block w-px h-4 bg-white/10" />
-                  <p className="text-sm text-[var(--text-muted)]">Ultra-premium, award-winning UI atra modern agri-tech capability.</p>
-                </div>
               </div>
             )}
 
@@ -428,7 +532,7 @@ export default function App() {
                     </div>
                     <h3 className="text-xl md:text-2xl font-bold text-[var(--text-main)] mb-3">No Active Advisory</h3>
                     <p className="text-[var(--text-muted)] mb-10 max-w-md mx-auto px-4">Submit your soil metrics on the dashboard to get AI-powered crop recommendations and yield analytics.</p>
-                    <button 
+                    <button
                       onClick={() => setActiveTab('dashboard')}
                       className="bg-agro-neon text-agro-dark px-8 md:px-10 py-4 rounded-2xl font-bold hover:bg-agro-neon/90 transition-all uppercase tracking-widest text-sm"
                     >
@@ -448,47 +552,74 @@ export default function App() {
                   severity: res.severity.charAt(0).toUpperCase() + res.severity.slice(1) as any,
                   crop: profile.primaryCrop
                 };
-                setProfile(prev => ({
-                  ...prev,
-                  diseaseHistory: [newRecord, ...(prev.diseaseHistory || [])]
-                }));
+                setProfile(prev => {
+                  const newProfile = {
+                    ...prev,
+                    diseaseHistory: [newRecord, ...(prev.diseaseHistory || [])]
+                  };
+                  saveProfileToDb(newProfile);
+                  return newProfile;
+                });
               }} />
             )}
 
             {activeTab === 'calendar' && (
-              <AgriCalendar 
-                tasks={profile.tasks || []} 
-                onAddTask={(task) => setProfile(prev => ({ ...prev, tasks: [{ ...task, id: Math.random().toString(36).substr(2, 9) }, ...(prev.tasks || [])] }))}
-                onToggleTask={(id) => setProfile(prev => ({ ...prev, tasks: prev.tasks?.map(t => t.id === id ? { ...t, completed: !t.completed } : t) }))}
-                onDeleteTask={(id) => setProfile(prev => ({ ...prev, tasks: prev.tasks?.filter(t => t.id !== id) }))}
+              <AgriCalendar
+                tasks={profile.tasks || []}
+                onAddTask={(task) => setProfile(prev => {
+                  const newProfile = { ...prev, tasks: [{ ...task, id: Math.random().toString(36).substr(2, 9) }, ...(prev.tasks || [])] };
+                  saveProfileToDb(newProfile);
+                  return newProfile;
+                })}
+                onToggleTask={(id) => setProfile(prev => {
+                  const newProfile = { ...prev, tasks: prev.tasks?.map(t => t.id === id ? { ...t, completed: !t.completed } : t) || [] };
+                  saveProfileToDb(newProfile);
+                  return newProfile;
+                })}
+                onDeleteTask={(id) => setProfile(prev => {
+                  const newProfile = { ...prev, tasks: prev.tasks?.filter(t => t.id !== id) || [] };
+                  saveProfileToDb(newProfile);
+                  return newProfile;
+                })}
               />
             )}
 
             {activeTab === 'inventory' && (
-              <InventoryManager 
+              <InventoryManager
                 items={profile.inventory || []}
-                onAddItem={(item) => setProfile(prev => ({ ...prev, inventory: [{ ...item, id: Math.random().toString(36).substr(2, 9) }, ...(prev.inventory || [])] }))}
-                onUpdateItem={(id, updates) => setProfile(prev => ({ ...prev, inventory: prev.inventory?.map(i => i.id === id ? { ...i, ...updates } : i) }))}
-                onDeleteItem={(id) => setProfile(prev => ({ ...prev, inventory: prev.inventory?.filter(i => i.id !== id) }))}
+                onAddItem={(item) => setProfile(prev => {
+                  const newProfile = { ...prev, inventory: [{ ...item, id: Math.random().toString(36).substr(2, 9) }, ...(prev.inventory || [])] };
+                  saveProfileToDb(newProfile);
+                  return newProfile;
+                })}
+                onUpdateItem={(id, updates) => setProfile(prev => {
+                  const newProfile = { ...prev, inventory: prev.inventory?.map(i => i.id === id ? { ...i, ...updates } : i) || [] };
+                  saveProfileToDb(newProfile);
+                  return newProfile;
+                })}
+                onDeleteItem={(id) => setProfile(prev => {
+                  const newProfile = { ...prev, inventory: prev.inventory?.filter(i => i.id !== id) || [] };
+                  saveProfileToDb(newProfile);
+                  return newProfile;
+                })}
               />
             )}
 
             {activeTab === 'machinery' && (
-              <MachineryMarketplace 
+              <MachineryMarketplace
                 items={machinery}
-                onRent={(id) => setMachinery(prev => prev.map(m => m.id === id ? { ...m, available: false } : m))}
-                onListMachinery={(item) => setMachinery(prev => [{ ...item, id: Math.random().toString(36).substr(2, 9) }, ...prev])}
+                onRent={handleRentMachinery}
+                onListMachinery={handleListMachinery}
               />
             )}
 
             {activeTab === 'irrigation' && <IrrigationScheduler />}
             {activeTab === 'simulator' && <YieldSimulator />}
             {activeTab === 'consultant' && <AgriConsultant />}
-            {activeTab === 'satellite' && <SatelliteMonitoring />}
             {activeTab === 'analytics' && profile.analytics && (
               <div id="analytics-report">
-                <AnalyticsDashboard 
-                  data={profile.analytics} 
+                <AnalyticsDashboard
+                  data={profile.analytics}
                   onExport={() => exportToPDF('analytics-report', 'Farm_Analytics_Report')}
                 />
               </div>
@@ -513,7 +644,7 @@ export default function App() {
             )}
 
             {activeTab === 'notifications' && (
-              <NotificationCenter 
+              <NotificationCenter
                 notifications={notifications}
                 onMarkRead={handleMarkRead}
                 onDelete={handleDeleteNotification}
@@ -522,9 +653,12 @@ export default function App() {
             )}
 
             {activeTab === 'profile' && (
-              <UserProfile 
+              <UserProfile
                 profile={profile}
-                onUpdate={setProfile}
+                onUpdate={(newProfile) => {
+                  setProfile(newProfile);
+                  saveProfileToDb(newProfile);
+                }}
               />
             )}
 
