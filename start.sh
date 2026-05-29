@@ -16,7 +16,7 @@ ML_PID=$!
 echo "⏳ Waiting for ML service to be ready..."
 retries=0
 while true; do
-    if curl -sf "http://localhost:${ML_PORT}/api/predict" -X POST -H "Content-Type: application/json" -d '{}' > /dev/null 2>&1; then
+    if curl -sf "http://localhost:${ML_PORT}/api/health" > /dev/null 2>&1; then
         echo "✅ ML service is healthy on port ${ML_PORT}"
         break
     fi
