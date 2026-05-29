@@ -7,3 +7,4 @@ tensorflow
 pandas
 beautifulsoup4
 requests
+python-dotenv
