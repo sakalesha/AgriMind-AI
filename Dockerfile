@@ -10,11 +10,12 @@ RUN npm run build --prefix frontend
 FROM node:20-slim
 WORKDIR /app
 
-# Install Python and essential build tools
+# Install Python, curl, and essential build tools
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Root dependencies and install Node.js modules
