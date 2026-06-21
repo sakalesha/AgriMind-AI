@@ -13,10 +13,9 @@ import {
   Sun,
   Save,
   CheckCircle2,
-  AlertCircle,
   Home
 } from 'lucide-react';
-import { UserProfile as UserProfileType, DiseaseRecord } from '@/src/types';
+import { UserProfile as UserProfileType } from '@/src/types';
 import { cn } from '@/src/lib/utils';
 
 interface UserProfileProps {
@@ -235,56 +234,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ profile, onUpdate }) =
             </div>
           </section>
 
-          {/* Disease History Section */}
-          <section className="premium-card">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-red-500/10 rounded-2xl flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-red-400" />
-              </div>
-              <h3 className="text-xl font-display font-bold">Disease History</h3>
-            </div>
 
-            <div className="space-y-4">
-              {profile.diseaseHistory && profile.diseaseHistory.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {profile.diseaseHistory.map((record) => (
-                    <div key={record.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-[var(--border-color)] group hover:border-red-500/30 transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center border",
-                          record.severity === 'High' ? "bg-red-500/10 border-red-500/20 text-red-400" :
-                          record.severity === 'Medium' ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-400" :
-                          "bg-green-500/10 border-green-500/20 text-green-400"
-                        )}>
-                          <AlertCircle className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-[var(--text-main)]">{record.diseaseName}</p>
-                          <p className="text-xs text-[var(--text-muted)] flex items-center gap-2">
-                            <Sprout className="w-3 h-3" /> {record.crop} • {record.date}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border",
-                          record.severity === 'High' ? "bg-red-500/10 text-red-400 border-red-500/20" :
-                          record.severity === 'Medium' ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
-                          "bg-green-500/10 text-green-400 border-green-500/20"
-                        )}>
-                          {record.severity}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-[var(--border-color)]">
-                  <p className="text-[var(--text-muted)]">No disease history recorded yet.</p>
-                </div>
-              )}
-            </div>
-          </section>
 
           {/* Preferences */}
           <section className="premium-card">

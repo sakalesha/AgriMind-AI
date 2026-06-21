@@ -1,10 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
+import {
   Bell, 
   TrendingUp, 
   CloudSun, 
-  Bug, 
   Info, 
   CheckCircle2, 
   X, 
@@ -74,12 +73,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     "w-12 h-12 rounded-2xl flex items-center justify-center border flex-shrink-0",
                     notification.type === 'market' && "bg-agro-neon/10 border-agro-neon/20 text-agro-neon",
                     notification.type === 'weather' && "bg-blue-500/10 border-blue-500/20 text-blue-400",
-                    notification.type === 'disease' && "bg-red-500/10 border-red-500/20 text-red-400",
                     notification.type === 'system' && "bg-purple-500/10 border-purple-500/20 text-purple-400",
                   )}>
                     {notification.type === 'market' && <TrendingUp className="w-6 h-6" />}
                     {notification.type === 'weather' && <CloudSun className="w-6 h-6" />}
-                    {notification.type === 'disease' && <Bug className="w-6 h-6" />}
                     {notification.type === 'system' && <Info className="w-6 h-6" />}
                   </div>
 

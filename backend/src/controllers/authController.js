@@ -89,7 +89,7 @@ exports.updateProfile = async (req, res) => {
         const allowedUpdates = [
             'fullName', 'phone', 'farmName', 'farmLocation', 
             'farmSize', 'primaryCrop', 'preferences', 
-            'inventory', 'tasks', 'diseaseHistory'
+            'inventory', 'tasks'
         ];
         
         const updates = {};

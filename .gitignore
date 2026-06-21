@@ -20,6 +20,11 @@ env/
 
 # ML Models (if they are large, though these are small, it's good practice)
 ml_service/models/*.pkl
+ml/models/*.pkl
+ml/ml/models/*.h5
+ml/data/csv/
+ml/data/parquet/
+
 
 # Logs
 npm-debug.log*

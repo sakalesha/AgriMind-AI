@@ -7,7 +7,7 @@ const CircuitBreaker = require('opossum');
 
 const mlCache = new LRUCache({
     max: 200,
-    ttl: 1000 * 60 * 60 * 24 // 24 hours
+    ttl: 1000 * 60 * 60 * 24 //time to live is 24 hrs
 });
 
 const ML_SERVICE_PORT = process.env.ML_SERVICE_PORT || 5001;
@@ -56,7 +56,7 @@ exports.getRecommendation = async (req, res) => {
         const { fieldName, N, P, K, temperature, humidity, ph, rainfall } = req.body;
         const cacheKey = `${N}|${P}|${K}|${temperature}|${humidity}|${ph}|${rainfall}`;
 
-        let crop, irrigation;
+        let crop;
         let estimatedYield = 2.0;
         let yieldInterval = null;
 
@@ -64,17 +64,16 @@ exports.getRecommendation = async (req, res) => {
 
         if (cachedData) {
             crop = cachedData.crop;
-            irrigation = cachedData.irrigation;
             estimatedYield = cachedData.estimatedYield;
             yieldInterval = cachedData.yieldInterval;
         } else {
             const payload = { N, P, K, temperature, humidity, ph, rainfall };
 
+            // Crop Recommendation + Yield Estimation
             let mlResult;
             try {
                 mlResult = await mlBreaker.fire(`${ML_BASE_URL}/api/predict`, payload);
                 crop = mlResult.crop;
-                irrigation = mlResult.irrigation;
             } catch (breakerError) {
                 console.error('❌ ML service (crop prediction) unavailable:', breakerError.message);
                 return res.status(503).json({
@@ -95,9 +94,10 @@ exports.getRecommendation = async (req, res) => {
                 console.warn('⚠️ Yield prediction failed (falling back to default):', yieldError.message);
             }
 
-            mlCache.set(cacheKey, { crop, irrigation, estimatedYield, yieldInterval });
+            mlCache.set(cacheKey, { crop, estimatedYield, yieldInterval });
         }
-
+        
+        // Fertilizer Gap Analysis
         // 1. Calculate Fertilizer Advice
         const requirements = cropRequirements[crop.toLowerCase()];
         let fertilizerAdvice = {};
@@ -121,7 +121,8 @@ exports.getRecommendation = async (req, res) => {
         } else {
             fertilizerAdvice = { summary: ["General NPK balanced fertilizer recommended."] };
         }
-
+        
+        // Price Trend Forecasting (LSTM)
         // 2. Market Analysis & LSTM Profitability Forecast
         let pricePerTon = marketPrices[crop.toLowerCase()] || 500;
         let predictedPrice = pricePerTon;
@@ -151,7 +152,6 @@ exports.getRecommendation = async (req, res) => {
             inputs: { N, P, K, temperature, humidity, ph, rainfall },
             prediction: {
                 crop,
-                irrigation,
                 yield: estimatedYield.toFixed(2),
                 yieldInterval,
                 marketPrice: pricePerTon,
@@ -166,7 +166,6 @@ exports.getRecommendation = async (req, res) => {
         res.json({
             status: 'success',
             crop,
-            irrigation,
             yield: estimatedYield.toFixed(2),
             yieldInterval,
             market: {

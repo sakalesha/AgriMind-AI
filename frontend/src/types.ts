@@ -29,15 +29,6 @@ export interface MarketPrice {
   history: { date: string; price: number }[];
 }
 
-export interface Post {
-  id: string;
-  author: string;
-  content: string;
-  likes: number;
-  timestamp: string;
-  recommendationId?: string;
-}
-
 export interface Category {
   id: string;
   label: string;
@@ -59,19 +50,13 @@ export interface FinanceSummary {
   netProfit: number;
 }
 
-export interface DiseaseRecord {
-  id: string;
-  diseaseName: string;
-  date: string;
-  severity: 'Low' | 'Medium' | 'High';
-  crop: string;
-}
+
 
 export interface FarmTask {
   id: string;
   title: string;
   date: string;
-  category: 'Irrigation' | 'Fertilizer' | 'Weeding' | 'Harvesting' | 'Other';
+  category: 'Fertilizer' | 'Weeding' | 'Harvesting' | 'Other';
   completed: boolean;
   priority: 'low' | 'medium' | 'high';
 }
@@ -85,15 +70,7 @@ export interface InventoryItem {
   minThreshold: number;
 }
 
-export interface MachineryItem {
-  id: string;
-  name: string;
-  owner: string;
-  pricePerDay: number;
-  location: string;
-  available: boolean;
-  image: string;
-}
+
 
 export interface AnalyticsData {
   historicalYield: { year: number; yield: number }[];
@@ -109,7 +86,7 @@ export interface UserProfile {
   farmLocation: string;
   farmSize: number;
   primaryCrop: string;
-  diseaseHistory?: DiseaseRecord[];
+
   inventory?: InventoryItem[];
   tasks?: FarmTask[];
   analytics?: AnalyticsData;
@@ -123,7 +100,7 @@ export interface UserProfile {
 
 export interface Notification {
   id: string;
-  type: 'market' | 'weather' | 'disease' | 'system';
+  type: 'market' | 'weather' | 'system';
   title: string;
   message: string;
   timestamp: string;

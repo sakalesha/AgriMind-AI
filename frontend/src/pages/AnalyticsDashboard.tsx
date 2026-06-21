@@ -240,7 +240,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data, on
             <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
               <h4 className="text-sm font-bold text-blue-400 mb-2">Cost Efficiency</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Machinery rental costs account for 25% of your total expenses. Based on your farm size and usage frequency, purchasing a pre-owned tractor could save you approximately ₹45,000 annually.
+                Labor costs account for a significant portion of your total expenses. Implementing automated irrigation controllers could save you approximately ₹15,000 annually by reducing manual labor.
               </p>
             </div>
             <button className="w-full py-4 bg-agro-neon/10 hover:bg-agro-neon/20 text-agro-neon rounded-2xl text-sm font-bold transition-all border border-agro-neon/20 flex items-center justify-center gap-2">

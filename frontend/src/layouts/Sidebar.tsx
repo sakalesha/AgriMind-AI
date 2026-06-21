@@ -11,17 +11,14 @@ import {
   Leaf,
   BarChart3,
   Wallet,
-  Bug,
   Menu,
   X,
   Bell,
   User,
   Calendar,
   Package,
-  Truck,
   Droplets,
-  Zap,
-  Bot
+  Zap
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -46,18 +43,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { id: 'dashboard', label: t('home'), icon: Sprout },
-    { id: 'disease', label: t('disease_detection'), icon: Bug },
     { id: 'calendar', label: t('agri_calendar'), icon: Calendar },
     { id: 'inventory', label: t('inventory'), icon: Package },
-    { id: 'machinery', label: t('machinery_rental'), icon: Truck },
-    { id: 'irrigation', label: t('smart_irrigation'), icon: Droplets },
     { id: 'simulator', label: t('yield_simulator'), icon: Zap },
-    { id: 'consultant', label: t('ai_consultant'), icon: Bot },
     { id: 'analytics', label: t('analytics'), icon: BarChart3 },
     { id: 'market', label: t('market_prices'), icon: TrendingUp },
     { id: 'finance', label: t('financial_ledger'), icon: Wallet },
-    { id: 'community', label: t('community'), icon: Users },
-    { id: 'notifications', label: t('notifications'), icon: Bell },
     { id: 'profile', label: t('user_profile'), icon: User },
   ];
 

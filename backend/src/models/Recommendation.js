@@ -21,7 +21,6 @@ const recommendationSchema = new mongoose.Schema({
     },
     prediction: {
         crop: String,
-        irrigation: String,
         yield: String,
         yieldInterval: [Number],
         marketPrice: Number,

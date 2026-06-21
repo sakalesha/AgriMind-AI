@@ -51,11 +51,6 @@ try:
 except Exception as e:
     print(f"ERROR loading model: {e}")
 
-def get_irrigation_level(rainfall, humidity):
-    if rainfall < 60: return 'High'
-    elif humidity > 70: return 'Low'
-    else: return 'Medium'
-
 @app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok'}), 200
@@ -76,12 +71,9 @@ def predict():
         prediction_encoded = model.predict(scaled_input)
         crop_name = label_encoder.inverse_transform(prediction_encoded)[0]
         
-        irrigation = get_irrigation_level(data['rainfall'], data['humidity'])
-        
         return jsonify({
             'status': 'success',
-            'crop': crop_name,
-            'irrigation': irrigation
+            'crop': crop_name
         })
 
     except Exception as e:

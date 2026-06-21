@@ -49,7 +49,6 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: 'seeds', label: 'Seeds', color: '#39FF14' },
   { id: 'fertilizers', label: 'Fertilizers', color: '#3B82F6' },
   { id: 'labor', label: 'Labor', color: '#F59E0B' },
-  { id: 'machinery', label: 'Machinery', color: '#8B5CF6' },
   { id: 'other', label: 'Other', color: '#6B7280' },
 ];
 
@@ -58,7 +57,6 @@ export const FinancialLedger: React.FC<FinancialLedgerProps> = ({ projectedReven
     { id: '1', category: 'seeds', amount: 12000, date: '2026-03-15', description: 'Basmati Rice Seeds' },
     { id: '2', category: 'fertilizers', amount: 8500, date: '2026-03-20', description: 'Urea & DAP' },
     { id: '3', category: 'labor', amount: 15000, date: '2026-03-25', description: 'Sowing Labor' },
-    { id: '4', category: 'machinery', amount: 5000, date: '2026-04-01', description: 'Tractor Rental' },
     { id: '5', category: 'other', amount: 2000, date: '2026-04-02', description: 'Small Tools' },
   ]);
 
@@ -373,9 +371,8 @@ export const FinancialLedger: React.FC<FinancialLedgerProps> = ({ projectedReven
                             {expense.category === 'seeds' && <Sprout className="w-6 h-6" />}
                             {expense.category === 'fertilizers' && <Zap className="w-6 h-6" />}
                             {expense.category === 'labor' && <Users className="w-6 h-6" />}
-                            {expense.category === 'machinery' && <Scale className="w-6 h-6" />}
                             {expense.category === 'other' && <Tag className="w-6 h-6" />}
-                            {!['seeds', 'fertilizers', 'labor', 'machinery', 'other'].includes(expense.category) && <Tag className="w-6 h-6" />}
+                            {!['seeds', 'fertilizers', 'labor', 'other'].includes(expense.category) && <Tag className="w-6 h-6" />}
                           </div>
                           <div>
                             <p className="font-bold text-[var(--text-main)]">{expense.description}</p>

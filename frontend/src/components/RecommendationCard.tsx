@@ -84,16 +84,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({ data }) 
             <p className="text-zinc-500 text-xs mt-2">Estimated based on current market trends</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-5 bg-white/5 rounded-3xl border border-white/5">
-              <div className="flex items-center gap-2 text-zinc-400 text-xs mb-3">
-                <Droplets className="w-4 h-4 text-blue-400" /> Irrigation
-              </div>
-              <p className="text-xl font-bold text-white">60%</p>
-              <div className="h-1.5 bg-white/5 rounded-full mt-3 overflow-hidden">
-                <div className="h-full bg-blue-400 w-[60%]" />
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-4">
             <div className="p-5 bg-white/5 rounded-3xl border border-white/5">
               <div className="flex items-center gap-2 text-zinc-400 text-xs mb-3">
                 <Zap className="w-4 h-4 text-yellow-400" /> Health

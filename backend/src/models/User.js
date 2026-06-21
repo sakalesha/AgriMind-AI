@@ -82,19 +82,10 @@ const userSchema = new mongoose.Schema({
             completed: { type: Boolean, default: false }
         }],
         default: [
-            { title: 'Morning Irrigation', date: new Date().toISOString().split('T')[0], category: 'Irrigation', priority: 'high', completed: false },
-            { title: 'Check for Rice Blast', date: new Date().toISOString().split('T')[0], category: 'Disease Control', priority: 'medium', completed: true }
+            { title: 'Field Inspection', date: new Date().toISOString().split('T')[0], category: 'Other', priority: 'medium', completed: false }
         ]
     },
-    diseaseHistory: {
-        type: [{
-            diseaseName: String,
-            date: String,
-            severity: String,
-            crop: String
-        }],
-        default: []
-    },
+
     createdAt: {
         type: Date,
         default: Date.now

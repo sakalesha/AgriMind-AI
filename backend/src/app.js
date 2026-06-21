@@ -6,12 +6,10 @@ const path = require('path');
 
 // Route Imports
 const authRoutes = require('./routes/authRoutes');
-const postRoutes = require('./routes/postRoutes');
 const recommendRoutes = require('./routes/recommendRoutes');
 const weatherRoutes = require('./routes/weatherRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const marketRoutes = require('./routes/marketRoutes');
-const machineryRoutes = require('./routes/machineryRoutes');
 
 dotenv.config();
 
@@ -32,29 +30,12 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // MongoDB Connection (Cached for Serverless)
 let cachedDb = null;
 
-const seedMachinery = async () => {
-    try {
-        const Machinery = require('./models/Machinery');
-        const count = await Machinery.countDocuments();
-        if (count === 0) {
-            console.log('🌱 Seeding initial machinery database...');
-            await Machinery.insertMany([
-                { name: 'John Deere 5310', owner: 'Harpreet Singh', pricePerDay: 2500, location: 'Amritsar, Punjab', available: true, image: 'https://picsum.photos/seed/tractor1/800/600' },
-                { name: 'Mahindra Arjun 555', owner: 'Rajesh Kumar', pricePerDay: 2200, location: 'Ludhiana, Punjab', available: false, image: 'https://picsum.photos/seed/tractor2/800/600' },
-                { name: 'Sonalika Worldtrac', owner: 'Gurmeet Singh', pricePerDay: 2800, location: 'Jalandhar, Punjab', available: true, image: 'https://picsum.photos/seed/tractor3/800/600' }
-            ]);
-            console.log('✅ Machinery database seeded successfully!');
-        }
-    } catch (err) {
-        console.error('❌ Machinery database seeding failed:', err.message);
-    }
-};
+
 
 const connectToDatabase = async () => {
     if (cachedDb) return cachedDb;
     const db = await mongoose.connect(process.env.MONGODB_URI);
     cachedDb = db;
-    await seedMachinery();
     return db;
 };
 
@@ -101,12 +82,10 @@ app.get('/api/diag', (req, res) => {
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
 app.use('/api/recommend', recommendRoutes);
 app.use('/api/weather', weatherRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/market', marketRoutes);
-app.use('/api/machinery', machineryRoutes);
 
 // Fallback for SPA routing
 app.get(/.*/, (req, res) => {

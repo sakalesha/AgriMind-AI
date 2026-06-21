@@ -26,23 +26,18 @@ import { WeatherWidget } from './components/WeatherWidget';
 import { SoilInputForm } from './components/SoilInputForm';
 import { RecommendationCard } from './components/RecommendationCard';
 import { MarketInsights } from './pages/MarketInsights';
-import { CommunityFeed } from './pages/CommunityFeed';
 import { AuthPage } from './pages/AuthPage';
 import { FinancialLedger } from './pages/FinancialLedger';
-import { DiseaseDetection } from './pages/DiseaseDetection';
 import { UserProfile } from './pages/UserProfile';
 import { NotificationCenter } from './pages/NotificationCenter';
 import { AgriCalendar } from './pages/AgriCalendar';
 import { InventoryManager } from './pages/InventoryManager';
-import { MachineryMarketplace } from './pages/MachineryMarketplace';
-import { AgriConsultant } from './pages/AgriConsultant';
-import { IrrigationScheduler } from './pages/IrrigationScheduler';
 import { YieldSimulator } from './pages/YieldSimulator';
 import { useTranslation } from 'react-i18next';
 import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
 import { exportToPDF } from './lib/pdfExport';
 import { requestNotificationPermission, sendNotification } from './lib/notifications';
-import { SoilMetrics, Recommendation, UserProfile as UserProfileType, Notification, DiseaseRecord, FarmTask, InventoryItem, MachineryItem, AnalyticsData } from './types';
+import { SoilMetrics, Recommendation, UserProfile as UserProfileType, Notification, FarmTask, InventoryItem, AnalyticsData } from './types';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -71,8 +66,7 @@ export default function App() {
       { id: '3', name: 'Neem Oil', category: 'Pesticides', quantity: 12, unit: 'liters', minThreshold: 5 }
     ],
     tasks: [
-      { id: '1', title: 'Morning Irrigation', date: new Date().toISOString().split('T')[0], category: 'Irrigation', priority: 'high', completed: false },
-      { id: '2', title: 'Check for Rice Blast', date: new Date().toISOString().split('T')[0], category: 'Disease Control', priority: 'medium', completed: true }
+      { id: '1', title: 'Field Inspection', date: new Date().toISOString().split('T')[0], category: 'Other', priority: 'medium', completed: false }
     ],
     analytics: {
       historicalYield: [
@@ -91,9 +85,7 @@ export default function App() {
       financialBreakdown: [
         { category: 'Seeds', amount: 25000 },
         { category: 'Fertilizers', amount: 45000 },
-        { category: 'Labor', amount: 60000 },
-        { category: 'Machinery', amount: 35000 },
-        { category: 'Irrigation', amount: 15000 }
+        { category: 'Labor', amount: 60000 }
       ]
     }
   });
@@ -124,9 +116,8 @@ export default function App() {
               farmSize: u.farmSize !== undefined ? u.farmSize : prev.farmSize,
               primaryCrop: u.primaryCrop || prev.primaryCrop,
               preferences: u.preferences || prev.preferences,
-              inventory: u.inventory?.length > 0 ? u.inventory : prev.inventory,
-              tasks: u.tasks?.length > 0 ? u.tasks : prev.tasks,
-              diseaseHistory: u.diseaseHistory || prev.diseaseHistory || []
+              inventory: u.inventory?.length > 0 ? u.inventory.map((item: any) => ({ ...item, id: item.id || item._id })) : prev.inventory,
+              tasks: u.tasks?.length > 0 ? u.tasks.map((task: any) => ({ ...task, id: task.id || task._id })) : prev.tasks
             }));
           }
         })
@@ -164,29 +155,7 @@ export default function App() {
     }
   }, [isAuthenticated]);
 
-  const [machinery, setMachinery] = useState<MachineryItem[]>([]);
 
-  // Fetch machinery from dynamic marketplace API
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetch('/api/machinery', { credentials: 'include' })
-        .then(res => res.json())
-        .then(result => {
-          if (result.status === 'success' && Array.isArray(result.data)) {
-            setMachinery(result.data.map((m: any) => ({
-              id: m._id,
-              name: m.name,
-              owner: m.owner,
-              pricePerDay: m.pricePerDay,
-              location: m.location,
-              available: m.available,
-              image: m.image
-            })));
-          }
-        })
-        .catch(console.error);
-    }
-  }, [isAuthenticated]);
 
   const saveProfileToDb = async (updatedProfile: UserProfileType) => {
     try {
@@ -203,8 +172,7 @@ export default function App() {
           primaryCrop: updatedProfile.primaryCrop,
           preferences: updatedProfile.preferences,
           inventory: updatedProfile.inventory,
-          tasks: updatedProfile.tasks,
-          diseaseHistory: updatedProfile.diseaseHistory
+          tasks: updatedProfile.tasks
         })
       });
       const data = await res.json();
@@ -216,46 +184,7 @@ export default function App() {
     }
   };
 
-  const handleRentMachinery = async (id: string) => {
-    try {
-      const res = await fetch(`/api/machinery/${id}/rent`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      const result = await res.json();
-      if (result.status === 'success') {
-        setMachinery(prev => prev.map(m => m.id === id ? { ...m, available: false } : m));
-      }
-    } catch (err) {
-      console.error("Failed to rent machinery:", err);
-    }
-  };
 
-  const handleListMachinery = async (item: Omit<MachineryItem, 'id' | 'available'>) => {
-    try {
-      const res = await fetch('/api/machinery', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(item)
-      });
-      const result = await res.json();
-      if (result.status === 'success' && result.data) {
-        const newMachineryItem = {
-          id: result.data._id,
-          name: result.data.name,
-          owner: result.data.owner,
-          pricePerDay: result.data.pricePerDay,
-          location: result.data.location,
-          available: result.data.available,
-          image: result.data.image
-        };
-        setMachinery(prev => [newMachineryItem, ...prev]);
-      }
-    } catch (err) {
-      console.error("Failed to list machinery:", err);
-    }
-  };
 
   const [notifications, setNotifications] = useState<Notification[]>([
     {
@@ -273,14 +202,6 @@ export default function App() {
       message: 'Thunderstorms expected in your region tomorrow. Ensure proper drainage in your fields.',
       timestamp: '5 hours ago',
       read: false
-    },
-    {
-      id: '3',
-      type: 'disease',
-      title: 'Rice Blast Warning',
-      message: 'Outbreaks reported in neighboring farms. Check your crop for early symptoms.',
-      timestamp: '1 day ago',
-      read: true
     }
   ]);
 
@@ -334,7 +255,7 @@ export default function App() {
       if (data.status === 'success') {
         setRecommendation({
           id: data.recordId || Math.random().toString(36).substr(2, 9),
-          crop: data.crop + (data.irrigation ? ` (Irrigation: ${data.irrigation})` : ''),
+          crop: data.crop,
           yield: parseFloat(data.yield) || 4.2,
           revenue: data.market?.estimatedRevenue || 234000,
           fertilizerGap: {
@@ -375,17 +296,12 @@ export default function App() {
             <h1 className="text-3xl md:text-4xl font-display font-bold text-[var(--text-main)] tracking-tight">
               {activeTab === 'dashboard' && 'Home'}
               {activeTab === 'advisory' && 'AI Advisory Hub'}
-              {activeTab === 'disease' && 'Disease Detection AI'}
               {activeTab === 'calendar' && 'Agricultural Calendar'}
               {activeTab === 'inventory' && 'Inventory Management'}
-              {activeTab === 'machinery' && 'Machinery Marketplace'}
-              {activeTab === 'irrigation' && 'Smart Irrigation'}
               {activeTab === 'simulator' && 'Yield Simulator'}
-              {activeTab === 'consultant' && 'AI Agri-Consultant'}
               {activeTab === 'analytics' && 'Analytics'}
               {activeTab === 'market' && 'Market Intelligence'}
               {activeTab === 'finance' && 'Financial Ledger'}
-              {activeTab === 'community' && 'Farmer Community'}
               {activeTab === 'notifications' && 'Notifications'}
               {activeTab === 'profile' && 'User Profile'}
             </h1>
@@ -409,12 +325,7 @@ export default function App() {
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
                 )}
               </button>
-              <button
-                onClick={() => setActiveTab('profile')}
-                className="p-1 hover:text-agro-neon transition-colors"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
+
             </div>
 
             <button
@@ -499,13 +410,6 @@ export default function App() {
                           </div>
                           <p className="text-[10px] text-agro-neon font-bold">High Confidence</p>
                         </div>
-                        <div className="premium-card flex flex-col items-center justify-center text-center">
-                          <p className="text-xs text-[var(--text-muted)] mb-3">Irrigation Levels</p>
-                          <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center mb-3">
-                            <Droplets className="w-6 h-6 text-blue-400" />
-                          </div>
-                          <p className="text-xs font-bold text-zinc-300">Normal</p>
-                        </div>
                       </div>
                     </div>
 
@@ -543,25 +447,7 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === 'disease' && (
-              <DiseaseDetection onResult={(res) => {
-                const newRecord: DiseaseRecord = {
-                  id: Math.random().toString(36).substr(2, 9),
-                  diseaseName: res.disease,
-                  date: new Date().toISOString().split('T')[0],
-                  severity: res.severity.charAt(0).toUpperCase() + res.severity.slice(1) as any,
-                  crop: profile.primaryCrop
-                };
-                setProfile(prev => {
-                  const newProfile = {
-                    ...prev,
-                    diseaseHistory: [newRecord, ...(prev.diseaseHistory || [])]
-                  };
-                  saveProfileToDb(newProfile);
-                  return newProfile;
-                });
-              }} />
-            )}
+
 
             {activeTab === 'calendar' && (
               <AgriCalendar
@@ -605,17 +491,7 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'machinery' && (
-              <MachineryMarketplace
-                items={machinery}
-                onRent={handleRentMachinery}
-                onListMachinery={handleListMachinery}
-              />
-            )}
-
-            {activeTab === 'irrigation' && <IrrigationScheduler />}
             {activeTab === 'simulator' && <YieldSimulator />}
-            {activeTab === 'consultant' && <AgriConsultant />}
             {activeTab === 'analytics' && profile.analytics && (
               <div id="analytics-report">
                 <AnalyticsDashboard
@@ -634,12 +510,6 @@ export default function App() {
             {activeTab === 'finance' && (
               <div className="max-w-6xl mx-auto">
                 <FinancialLedger projectedRevenue={projectedRevenue} />
-              </div>
-            )}
-
-            {activeTab === 'community' && (
-              <div className="max-w-4xl mx-auto">
-                <CommunityFeed />
               </div>
             )}
 
