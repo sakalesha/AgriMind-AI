@@ -7,9 +7,9 @@ NODE_PORT=${PORT:-5000}
 MAX_RETRIES=30
 RETRY_INTERVAL=2
 
-# Start Python ML service in the background
+# Start Python ML service in the background (gunicorn production server)
 echo "🌱 Starting Python ML service on port ${ML_PORT}..."
-python3 ml/ml_api.py &
+gunicorn --bind 0.0.0.0:${ML_PORT} --chdir /app/ml --workers 1 --timeout 120 ml_api:app &
 ML_PID=$!
 
 # Wait for ML service to be healthy
